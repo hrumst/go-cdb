@@ -20,7 +20,7 @@ func TestStorage_InMemoryEngine(t *testing.T) {
 	assert.ErrorIs(t, err, engine.NotFoundKey)
 
 	err = testStorage.Del(context.Background(), testKey)
-	assert.ErrorIs(t, err, engine.NotFoundKey)
+	assert.NoError(t, err, engine.NotFoundKey)
 
 	err = testStorage.Set(context.Background(), testKey, testVal)
 	assert.NoError(t, err)

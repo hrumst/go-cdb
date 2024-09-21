@@ -37,7 +37,7 @@ func (ime *inMemoryEngine) Del(_ context.Context, key string) error {
 
 	_, exists := ime.data[key]
 	if !exists {
-		return fmt.Errorf("%w: inMemoryEngine.Del error: %w: %s", ExecError, NotFoundKey, key)
+		return nil
 	}
 
 	delete(ime.data, key)
