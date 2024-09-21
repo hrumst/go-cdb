@@ -12,6 +12,7 @@ type InputParserPlain struct {
 	rawInput []rune
 }
 
+// TODO refactor: remove remove database-specific methods
 func NewInputParserPlain(rawInput string) *InputParserPlain {
 	return &InputParserPlain{
 		rawInput: []rune(rawInput),
