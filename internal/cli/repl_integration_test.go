@@ -52,13 +52,13 @@ func TestIntegrationREPL(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expectOutput := `testREPL > testREPL Error: parse error: invalid token, at position: 0, invalid input: 'some invalid data ' 
-testREPL > testREPL Error: parse error: invalid token, at position: 0, invalid input: 'GEtt key1 ' 
-testREPL > testREPL Error: execution error: inMemoryEngine.Get error: not found key: key1 
-testREPL > testREPL Ok:  
-testREPL > testREPL Ok: val1 
-testREPL > testREPL Ok:  
-testREPL > testREPL Error: execution error: inMemoryEngine.Get error: not found key: key1 
+	expectOutput := `testREPL > testREPL: Error: parse error: invalid token, at position: 0, invalid input: 'some invalid data ' 
+testREPL > testREPL: Error: parse error: invalid token, at position: 0, invalid input: 'GEtt key1 ' 
+testREPL > testREPL: Error: execution error: inMemoryEngine.Get error: not found key: key1 
+testREPL > testREPL: Ok: <empty> 
+testREPL > testREPL: Ok: val1 
+testREPL > testREPL: Ok: <empty> 
+testREPL > testREPL: Error: execution error: inMemoryEngine.Get error: not found key: key1 
 testREPL > Bye!
 `
 
@@ -103,10 +103,10 @@ func TestIntegrationREPLWithExit(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expectOutput := `testREPL > testREPL Error: parse error: invalid token, at position: 0, invalid input: 'some invalid data ' 
-testREPL > testREPL Error: parse error: invalid token, at position: 0, invalid input: 'GEtt key1 ' 
-testREPL > testREPL Error: execution error: inMemoryEngine.Get error: not found key: key1 
-testREPL > testREPL Ok:  
+	expectOutput := `testREPL > testREPL: Error: parse error: invalid token, at position: 0, invalid input: 'some invalid data ' 
+testREPL > testREPL: Error: parse error: invalid token, at position: 0, invalid input: 'GEtt key1 ' 
+testREPL > testREPL: Error: execution error: inMemoryEngine.Get error: not found key: key1 
+testREPL > testREPL: Ok: <empty> 
 testREPL > Bye!
 `
 

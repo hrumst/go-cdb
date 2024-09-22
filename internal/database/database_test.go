@@ -26,8 +26,7 @@ func TestDatabase(t *testing.T) {
 		input            string
 		setupStorageMock func(*Mockstorage)
 		setupCepMock     func(*MockcommandExecParser)
-		expectResult     compute.CommandExecResult
-		expectError      error
+		expectResult     string
 	}
 
 	tcs := []testCase{
@@ -49,7 +48,7 @@ func TestDatabase(t *testing.T) {
 					Return("", engine.NotFoundKey).
 					Times(1)
 			},
-			expectError: engine.NotFoundKey,
+			expectResult: formatErrorResult(engine.NotFoundKey),
 		}, {
 			input: "SET " + testKey + " " + testVal,
 			setupCepMock: func(mcep *MockcommandExecParser) {
@@ -69,7 +68,7 @@ func TestDatabase(t *testing.T) {
 					Return(nil).
 					Times(1)
 			},
-			expectResult: compute.CommandExecResult{},
+			expectResult: formatOkResult(""),
 		}, {
 			input: "GET " + testKey,
 			setupCepMock: func(mcep *MockcommandExecParser) {
@@ -88,9 +87,7 @@ func TestDatabase(t *testing.T) {
 					Return(testVal, nil).
 					Times(1)
 			},
-			expectResult: compute.CommandExecResult{
-				Result: testVal,
-			},
+			expectResult: formatOkResult(testVal),
 		}, {
 			input: "DEL " + testKey,
 			setupCepMock: func(mcep *MockcommandExecParser) {
@@ -109,7 +106,7 @@ func TestDatabase(t *testing.T) {
 					Return(nil).
 					Times(1)
 			},
-			expectResult: compute.CommandExecResult{},
+			expectResult: formatOkResult(""),
 		}, {
 			input: "DEL " + testKey,
 			setupCepMock: func(mcep *MockcommandExecParser) {
@@ -122,7 +119,7 @@ func TestDatabase(t *testing.T) {
 						}, nil,
 					)
 			},
-			expectError: unsupportedCommandErr,
+			expectResult: formatErrorResult(unsupportedCommandErr) + ": 1000",
 		},
 	}
 
@@ -139,16 +136,11 @@ func TestDatabase(t *testing.T) {
 					tc.setupCepMock(mcep)
 				}
 				db := NewDatabase(ms, mcep, tools.NewAppLogger(zap.NewNop()))
-				result, err := db.Execute(
+				result := db.Execute(
 					context.Background(),
 					tc.input,
 				)
-				if tc.expectError != nil {
-					assert.ErrorIs(t, err, tc.expectError)
-					assert.Nil(t, result)
-				} else {
-					assert.Equal(t, tc.expectResult, *result)
-				}
+				assert.Equal(t, tc.expectResult, result)
 			},
 		)
 	}
