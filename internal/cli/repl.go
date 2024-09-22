@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"io"
 	"strings"
-
-	"github.com/hrumst/go-cdb/internal/database/compute"
 )
 
 const (
@@ -15,7 +13,7 @@ const (
 )
 
 type database interface {
-	Execute(ctx context.Context, input string) (*compute.CommandExecResult, error)
+	Execute(ctx context.Context, input string) string
 }
 
 type repl struct {
@@ -51,13 +49,8 @@ func (rc *repl) printPrompt() error {
 	return err
 }
 
-func (rc *repl) printErrResult(message string) error {
-	_, err := fmt.Fprintf(rc.output, "%s Error: %s \n", rc.cliName, message)
-	return err
-}
-
-func (rc *repl) printOkResult(message string) error {
-	_, err := fmt.Fprintf(rc.output, "%s Ok: %s \n", rc.cliName, message)
+func (rc *repl) printResult(message string) error {
+	_, err := fmt.Fprintf(rc.output, "%s: %s \n", rc.cliName, message)
 	return err
 }
 
@@ -74,15 +67,9 @@ func (rc *repl) Run() error {
 			break
 		}
 
-		result, err := rc.db.Execute(context.Background(), input)
-		if err != nil {
-			if err := rc.printErrResult(err.Error()); err != nil {
-				return err
-			}
-		} else {
-			if err := rc.printOkResult(result.Result); err != nil {
-				return err
-			}
+		result := rc.db.Execute(context.Background(), input)
+		if err := rc.printResult(result); err != nil {
+			return err
 		}
 
 		if err := rc.printPrompt(); err != nil {

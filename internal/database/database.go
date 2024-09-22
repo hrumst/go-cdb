@@ -49,7 +49,18 @@ func NewDatabase(
 	}
 }
 
-func (d *database) Execute(ctx context.Context, input string) (*pc.CommandExecResult, error) {
+func formatErrorResult(err error) string {
+	return "Error: " + err.Error()
+}
+
+func formatOkResult(res string) string {
+	if len(res) == 0 {
+		return "Ok: <empty>"
+	}
+	return "Ok: " + res
+}
+
+func (d *database) Execute(ctx context.Context, input string) string {
 	d.logger.Debug(
 		ctx,
 		"incoming db query",
@@ -63,7 +74,8 @@ func (d *database) Execute(ctx context.Context, input string) (*pc.CommandExecRe
 			"db query error",
 			zap.Any("error", err),
 		)
-		return nil, err
+
+		return formatErrorResult(err)
 	}
 
 	d.logger.Debug(
@@ -93,14 +105,12 @@ func (d *database) Execute(ctx context.Context, input string) (*pc.CommandExecRe
 			"db query error",
 			zap.Any("error", execErr),
 		)
-		return nil, execErr
+		return formatErrorResult(execErr)
 	}
 	d.logger.Debug(
 		ctx,
 		"db query result",
 		zap.Any("result", resultVal),
 	)
-	return &pc.CommandExecResult{
-		Result: resultVal,
-	}, nil
+	return formatOkResult(resultVal)
 }
