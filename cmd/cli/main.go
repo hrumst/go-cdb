@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"go.uber.org/zap"
 	"os"
@@ -41,7 +42,15 @@ func main() {
 		os.Exit(0)
 	}()
 
-	replServer := cli.NewREPL(cliName, inputLimit, db, os.Stdin, os.Stdout)
+	replServer := cli.NewREPL(
+		cliName,
+		inputLimit,
+		os.Stdin,
+		os.Stdout,
+		func(input string) (string, error) {
+			return db.Execute(context.Background(), input), nil
+		},
+	)
 	if err := replServer.Run(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)

@@ -2,7 +2,6 @@ package cli
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"io"
 	"strings"
@@ -12,31 +11,27 @@ const (
 	exitCommand = ".exit"
 )
 
-type database interface {
-	Execute(ctx context.Context, input string) string
-}
-
 type repl struct {
 	cliName    string
 	inputLimit int
-	db         database
 	input      io.Reader
 	output     io.Writer
+	handler    func(string) (string, error)
 }
 
 func NewREPL(
 	cliName string,
 	inputLimit int,
-	db database,
 	input io.Reader,
 	output io.Writer,
+	handler func(string) (string, error),
 ) *repl {
 	return &repl{
 		cliName:    cliName,
 		inputLimit: inputLimit,
-		db:         db,
 		input:      input,
 		output:     output,
+		handler:    handler,
 	}
 }
 
@@ -67,8 +62,11 @@ func (rc *repl) Run() error {
 			break
 		}
 
-		result := rc.db.Execute(context.Background(), input)
-		if err := rc.printResult(result); err != nil {
+		resp, err := rc.handler(input)
+		if err != nil {
+			return err
+		}
+		if err := rc.printResult(resp); err != nil {
 			return err
 		}
 

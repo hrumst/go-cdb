@@ -1,7 +1,8 @@
-package cli
+package test_integration
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
@@ -9,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hrumst/go-cdb/internal/cli"
 	db "github.com/hrumst/go-cdb/internal/database"
 	"github.com/hrumst/go-cdb/internal/database/compute/parser"
 	"github.com/hrumst/go-cdb/internal/database/storage/engine"
@@ -38,7 +40,15 @@ func TestIntegrationREPL(t *testing.T) {
 	input.Write([]byte(fmt.Sprintf("DEL %s \n", testKey)))
 	input.Write([]byte(fmt.Sprintf("GET %s \n", testKey)))
 
-	testRepl := NewREPL("testREPL", 100, testDb, input, output)
+	testRepl := cli.NewREPL(
+		"testREPL",
+		100,
+		input,
+		output,
+		func(input string) (string, error) {
+			return testDb.Execute(context.Background(), input), nil
+		},
+	)
 	go func() {
 		_ = testRepl.Run()
 	}()
@@ -89,7 +99,15 @@ func TestIntegrationREPLWithExit(t *testing.T) {
 	input.Write([]byte(fmt.Sprintf("DEL %s \n", testKey)))
 	input.Write([]byte(fmt.Sprintf("GET %s \n", testKey)))
 
-	testRepl := NewREPL("testREPL", 100, testDb, input, output)
+	testRepl := cli.NewREPL(
+		"testREPL",
+		100,
+		input,
+		output,
+		func(input string) (string, error) {
+			return testDb.Execute(context.Background(), input), nil
+		},
+	)
 	go func() {
 		_ = testRepl.Run()
 	}()
