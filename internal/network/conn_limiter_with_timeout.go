@@ -5,7 +5,6 @@ import (
 	"errors"
 	"go.uber.org/zap"
 	"net"
-	"sync/atomic"
 	"time"
 )
 
@@ -17,8 +16,7 @@ const (
 var acceptConnDeadlineExceededError = errors.New("accept connection deadline exceeded")
 
 type connLimiterWithTimeout struct {
-	maxConns          int64
-	curConnsNum       int64
+	connLimit         chan struct{}
 	connAcceptTimeout time.Duration
 	waitCheckTimeout  time.Duration
 	logger            logger
@@ -42,7 +40,7 @@ func NewConnLimiterWithTimeout(
 	}
 
 	return &connLimiterWithTimeout{
-		maxConns:          maxConns,
+		connLimit:         make(chan struct{}, maxConns),
 		connAcceptTimeout: connAcceptTimeout,
 		waitCheckTimeout:  waitCheckTimeout,
 		logger:            logger,
@@ -50,32 +48,16 @@ func NewConnLimiterWithTimeout(
 }
 
 func (cl *connLimiterWithTimeout) tryAcquire() bool {
-	for {
-		curNum := atomic.LoadInt64(&cl.curConnsNum)
-		if curNum < cl.maxConns {
-			if atomic.CompareAndSwapInt64(&cl.curConnsNum, curNum, curNum+1) {
-				return true
-			}
-			continue
-		}
-		// limit exceeded
-		break
+	select {
+	case cl.connLimit <- struct{}{}:
+		return true
+	default:
+		return false
 	}
-	return false
 }
 
 func (cl *connLimiterWithTimeout) release() {
-	for {
-		curNum := atomic.LoadInt64(&cl.curConnsNum)
-		if curNum > 0 {
-			if atomic.CompareAndSwapInt64(&cl.curConnsNum, curNum, curNum-1) {
-				return
-			}
-			continue
-		}
-		// can't deduct from zero
-		break
-	}
+	<-cl.connLimit
 }
 
 func (cl *connLimiterWithTimeout) LimiterInterceptor(nextHandler ConnHandler) ConnHandler {

@@ -16,7 +16,7 @@ import (
 func TestConnLimiterWithTimeout_DefaultValues(t *testing.T) {
 	testLogger := tools.NewAppLogger(zap.NewNop())
 	testLimiter := NewConnLimiterWithTimeout(0, 0, testLogger)
-	assert.Equal(t, int64(defaultMaxConns), testLimiter.maxConns)
+	assert.Equal(t, defaultMaxConns, cap(testLimiter.connLimit))
 	assert.Equal(t, defaultAcceptTimeout, testLimiter.connAcceptTimeout)
 	assert.Equal(t, defaultAcceptTimeout/10, testLimiter.waitCheckTimeout)
 }
@@ -40,14 +40,12 @@ func TestConnLimiterWithTimeout_AcquireRelease(t *testing.T) {
 	}
 	wg.Wait()
 
-	assert.Equal(t, int64(10), atomic.LoadInt64(&testLimiter.curConnsNum))
 	assert.Equal(t, int64(10), atomic.LoadInt64(&acquireTrue))
 	assert.Equal(t, int64(10), atomic.LoadInt64(&acquireFalse))
 
 	for i := 0; i < 5; i += 1 {
 		testLimiter.release()
 	}
-	assert.Equal(t, int64(5), atomic.LoadInt64(&testLimiter.curConnsNum))
 
 	var acquireTrue2, acquireFalse2 int64
 	wg.Add(20)
@@ -63,7 +61,6 @@ func TestConnLimiterWithTimeout_AcquireRelease(t *testing.T) {
 	}
 	wg.Wait()
 
-	assert.Equal(t, int64(10), atomic.LoadInt64(&testLimiter.curConnsNum))
 	assert.Equal(t, int64(5), atomic.LoadInt64(&acquireTrue2))
 	assert.Equal(t, int64(15), atomic.LoadInt64(&acquireFalse2))
 }
