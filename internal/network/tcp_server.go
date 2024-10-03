@@ -59,6 +59,11 @@ func (ts *tcpServer) Start(ctx context.Context, interceptors []ConnInterceptor, 
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
+			defer func() {
+				if v := recover(); v != nil {
+					ts.logger.Error(ctx, "panic while connection processing", zap.Any("panic", v))
+				}
+			}()
 
 			interceptChain(ctx, conn)
 		}()

@@ -50,9 +50,6 @@ var tooLongRequestError = errors.New("too long request")
 
 func (chq *connHandlerQuery) Handle(ctx context.Context, conn net.Conn) {
 	defer func() {
-		if v := recover(); v != nil {
-			chq.logger.Error(ctx, "panic while connection processing", zap.Any("panic", v))
-		}
 		if err := conn.Close(); err != nil {
 			chq.logger.Error(ctx, "connection close error", zap.Error(err))
 		}
