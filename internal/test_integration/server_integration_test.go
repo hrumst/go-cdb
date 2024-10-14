@@ -2,31 +2,65 @@ package test_integration
 
 import (
 	"context"
-	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
+	"os"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 
 	"github.com/hrumst/go-cdb/internal/config"
 	"github.com/hrumst/go-cdb/internal/database"
 	"github.com/hrumst/go-cdb/internal/database/compute/parser"
 	"github.com/hrumst/go-cdb/internal/database/storage"
 	"github.com/hrumst/go-cdb/internal/database/storage/engine"
+	"github.com/hrumst/go-cdb/internal/fs"
 	"github.com/hrumst/go-cdb/internal/network"
 	"github.com/hrumst/go-cdb/internal/tools"
 )
+
+type testStorage interface {
+	Set(ctx context.Context, key string, val string) error
+	Del(ctx context.Context, key string) error
+	Get(ctx context.Context, key string) (string, error)
+}
+
+func InitTestStorage(t *testing.T, testDirPath string) testStorage {
+	err := os.RemoveAll(testDirPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.Mkdir(testDirPath, 0755)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	dirFs := fs.NewDir(testDirPath)
+	ts, err := storage.NewStorageWithRecover(
+		context.Background(),
+		engine.NewInMemoryEngine(),
+		config.AppConfigWal{
+			FlushBatchSize:    1 << 12,
+			FlushBatchTimeout: 10 * time.Millisecond,
+			MaxSegmentSize:    "10kb",
+		},
+		dirFs,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return ts
+}
 
 func TestNewTCPClient_Integration(t *testing.T) {
 	testAddr := "localhost:11114"
 	testLogger := tools.NewAppLogger(zap.NewNop())
 	testServer := network.NewTCPServer(testAddr, testLogger)
-
 	db := database.NewDatabase(
-		storage.NewStorage(engine.NewInMemoryEngine()),
+		InitTestStorage(t, "./test_dir"),
 		parser.NewCommandExecParserPlain(),
 		testLogger,
 	)
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -36,7 +70,7 @@ func TestNewTCPClient_Integration(t *testing.T) {
 			[]network.ConnInterceptor{
 				network.NewConnLimiterWithTimeout(
 					10,
-					100*time.Millisecond,
+					10000*time.Millisecond,
 					testLogger,
 				).LimiterInterceptor,
 			},
@@ -59,17 +93,17 @@ func TestNewTCPClient_Integration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "Error: execution error: inMemoryEngine.Get error: not found key: key1", out)
 
-	time.Sleep(90 * time.Millisecond)
+	time.Sleep(80 * time.Millisecond)
 	out, err = testClient.Request("SET key1 val1")
 	assert.NoError(t, err)
 	assert.Equal(t, "Ok: <empty>", out)
 
-	time.Sleep(90 * time.Millisecond)
+	time.Sleep(80 * time.Millisecond)
 	out, err = testClient.Request("GET key1")
 	assert.NoError(t, err)
 	assert.Equal(t, "Ok: val1", out)
 
-	time.Sleep(90 * time.Millisecond)
+	time.Sleep(80 * time.Millisecond)
 	out, err = testClient.Request("DEL key1")
 	assert.NoError(t, err)
 	assert.Equal(t, "Ok: <empty>", out)
@@ -87,7 +121,7 @@ func TestNewTCPClient_IntegrationConnLimit(t *testing.T) {
 	testServer := network.NewTCPServer(testAddr, testLogger)
 
 	db := database.NewDatabase(
-		storage.NewStorage(engine.NewInMemoryEngine()),
+		InitTestStorage(t, "./test_dir"),
 		parser.NewCommandExecParserPlain(),
 		testLogger,
 	)

@@ -6,6 +6,7 @@ type AppConfig struct {
 	Engine  AppConfigEngine  `yaml:"engine"`
 	Network AppConfigNetwork `yaml:"network"`
 	Logging AppConfigLogging `yaml:"logging"`
+	Wal     AppConfigWal     `yaml:"wal"`
 }
 
 type AppConfigEngine struct {
@@ -23,4 +24,11 @@ type AppConfigNetwork struct {
 type AppConfigLogging struct {
 	Level  string `yaml:"level"`
 	Output string `yaml:"output"`
+}
+
+type AppConfigWal struct {
+	FlushBatchSize    int64         `yaml:"flushing_batch_size"`
+	FlushBatchTimeout time.Duration `yaml:"flushing_batch_timeout"`
+	MaxSegmentSize    string        `yaml:"max_segment_size"`
+	DataDirectoryPath string        `yaml:"data_directory"`
 }
