@@ -11,8 +11,9 @@ import (
 	"github.com/hrumst/go-cdb/internal/config"
 	"github.com/hrumst/go-cdb/internal/database"
 	"github.com/hrumst/go-cdb/internal/database/compute/parser"
-	"github.com/hrumst/go-cdb/internal/database/storage"
+	dbStorage "github.com/hrumst/go-cdb/internal/database/storage"
 	"github.com/hrumst/go-cdb/internal/database/storage/engine"
+	"github.com/hrumst/go-cdb/internal/fs"
 	"github.com/hrumst/go-cdb/internal/network"
 	"github.com/hrumst/go-cdb/internal/tools"
 )
@@ -41,12 +42,17 @@ func main() {
 		zapLogger.Fatal("parse app config error", zap.Error(err))
 	}
 
-	db := database.NewDatabase(
-		storage.NewStorage(engine.NewInMemoryEngine()),
-		parser.NewCommandExecParserPlain(),
-		appLogger,
+	storage, err := dbStorage.NewStorageWithRecover(
+		signalCtx,
+		engine.NewInMemoryEngine(),
+		appConfig.Wal,
+		fs.NewDir(appConfig.Wal.DataDirectoryPath),
 	)
+	if err != nil {
+		zapLogger.Fatal("storage init error", zap.Error(err))
+	}
 
+	db := database.NewDatabase(storage, parser.NewCommandExecParserPlain(), appLogger)
 	tcpServer := network.NewTCPServer(appConfig.Network.Address, appLogger)
 	if err := tcpServer.Start(
 		signalCtx,
