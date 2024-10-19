@@ -5,7 +5,8 @@ import (
 )
 
 type dir struct {
-	dirPath string
+	dirPath  string
+	openedFd *os.File
 }
 
 func NewDir(dirPath string) *dir {
@@ -14,14 +15,32 @@ func NewDir(dirPath string) *dir {
 	}
 }
 
-func (d dir) filepath(filename string) string {
+func (d *dir) filepath(filename string) string {
 	return d.dirPath + string(os.PathSeparator) + filename
 }
 
-func (d dir) WriteSync(filename string, data []byte) (os.FileInfo, error) {
+func (d *dir) openFd(filename string) (*os.File, error) {
 	filePath := d.filepath(filename)
+	if d.openedFd != nil {
+		if d.openedFd.Name() == filePath {
+			// reuse cached fd
+			return d.openedFd, nil
+		} else {
+			// close previous cached fd, then open the next one
+			_ = d.openedFd.Close()
+		}
+	}
+
 	fd, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-	defer fd.Close()
+	if err != nil {
+		return nil, err
+	}
+	d.openedFd = fd
+	return fd, nil
+}
+
+func (d *dir) WriteSync(filename string, data []byte) (os.FileInfo, error) {
+	fd, err := d.openFd(filename)
 
 	if err != nil {
 		return nil, err
@@ -35,11 +54,11 @@ func (d dir) WriteSync(filename string, data []byte) (os.FileInfo, error) {
 	return fd.Stat()
 }
 
-func (d dir) ReadFile(filename string) ([]byte, error) {
+func (d *dir) ReadFile(filename string) ([]byte, error) {
 	return os.ReadFile(d.filepath(filename))
 }
 
-func (d dir) FilesStats() ([]os.FileInfo, error) {
+func (d *dir) FilesStats() ([]os.FileInfo, error) {
 	files, err := os.ReadDir(d.dirPath)
 	if err != nil {
 		return nil, err

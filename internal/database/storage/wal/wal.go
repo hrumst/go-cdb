@@ -57,21 +57,30 @@ func InitWal(
 		flushLogTimeTick := time.NewTicker(logBufferFlushInterval)
 		defer flushLogTimeTick.Stop()
 
+		flushLogs := func() {
+			tools.WithLock(
+				wl.bufLock,
+				func() {
+					if len(wl.curLogBuffer.logs) > 0 {
+						wl.flushRotateBuffer()
+					}
+				},
+			)
+		}
+
 		for {
 			select {
-			case <-flushLogTimeTick.C:
-				tools.WithLock(
-					wl.bufLock,
-					func() {
-						if len(wl.curLogBuffer.logs) > 0 {
-							wl.flushRotateBuffer()
-						}
-					},
-				)
 			case <-ctx.Done():
+				flushLogs()
 				return
+			default:
+				select {
+				case <-flushLogTimeTick.C:
+					flushLogs()
+				}
 			}
 		}
+
 	}()
 
 	return wl
