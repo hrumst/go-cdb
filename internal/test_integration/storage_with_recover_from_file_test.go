@@ -13,13 +13,22 @@ import (
 	"github.com/hrumst/go-cdb/internal/database/compute/parser"
 	"github.com/hrumst/go-cdb/internal/database/storage"
 	"github.com/hrumst/go-cdb/internal/database/storage/engine"
+	"github.com/hrumst/go-cdb/internal/database/storage/replication"
 	"github.com/hrumst/go-cdb/internal/fs"
 	"github.com/hrumst/go-cdb/internal/network"
 	"github.com/hrumst/go-cdb/internal/tools"
 )
 
 func InitTestStorageRecover(t *testing.T, testDirPath string) testStorage {
+	appLogger := tools.NewAppLogger(zap.NewNop())
 	dirFs := fs.NewDir(testDirPath)
+	replicaConfig := config.AppConfigReplica{
+		ReplicaType:   replication.ReplicaTypeMaster,
+		MasterAddress: "127.0.0.1:8855",
+		SyncInterval:  10 * time.Second,
+	}
+
+	initReplica := replication.NewInitReplica(replicaConfig, dirFs, appLogger)
 	ts, err := storage.NewStorageWithRecover(
 		context.Background(),
 		engine.NewInMemoryEngine(),
@@ -29,6 +38,9 @@ func InitTestStorageRecover(t *testing.T, testDirPath string) testStorage {
 			MaxSegmentSize:    "10kb",
 		},
 		dirFs,
+		initReplica,
+		replicaConfig.ReplicaType,
+		appLogger,
 	)
 	if err != nil {
 		t.Fatal(err)

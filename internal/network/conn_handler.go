@@ -18,11 +18,11 @@ type connHandlerQuery struct {
 	maxBodySizeBytes int64
 	connIdleTimeout  time.Duration
 	logger           logger
-	handle           func(ctx context.Context, input string) string
+	handle           func(ctx context.Context, input []byte) []byte
 }
 
 func NewConnHandlerQuery(
-	handle func(ctx context.Context, input string) string,
+	handle func(ctx context.Context, input []byte) []byte,
 	maxBodySizeBytes int64,
 	connIdleTimeout time.Duration,
 	logger logger,
@@ -83,7 +83,7 @@ func (chq *connHandlerQuery) Handle(ctx context.Context, conn net.Conn) {
 			continue
 		}
 
-		result := chq.handle(ctx, string(readBuffer[:count]))
+		result := chq.handle(ctx, readBuffer[:count])
 		if _, err := conn.Write([]byte(result)); err != nil {
 			chq.logger.Debug(ctx, "connection write error", zap.Error(err))
 			return

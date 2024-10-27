@@ -13,6 +13,7 @@ import (
 	"github.com/hrumst/go-cdb/internal/config"
 	"github.com/hrumst/go-cdb/internal/database/compute"
 	"github.com/hrumst/go-cdb/internal/database/storage/engine"
+	"github.com/hrumst/go-cdb/internal/database/storage/replication"
 	wal2 "github.com/hrumst/go-cdb/internal/database/storage/wal"
 	"github.com/hrumst/go-cdb/internal/tools"
 )
@@ -87,6 +88,15 @@ func TestInitWithRecover(t *testing.T) {
 		Return(buffer2.Bytes(), nil).
 		Times(1)
 
+	testReplicaInit := NewMockinitReplica(cntrl)
+	testReplicaInit.
+		EXPECT().
+		InitMasterReplica(gomock.Any()).
+		Return(nil).
+		Times(1)
+
+	testAppLogger := NewMockappLogger(cntrl)
+
 	initStorage, err := NewStorageWithRecover(
 		context.Background(),
 		engine.NewInMemoryEngine(),
@@ -96,6 +106,9 @@ func TestInitWithRecover(t *testing.T) {
 			MaxSegmentSize:    "30kb",
 		},
 		testDirFs,
+		testReplicaInit,
+		replication.ReplicaTypeMaster,
+		testAppLogger,
 	)
 	assert.NoError(t, err)
 
@@ -122,6 +135,15 @@ func TestInitWithEmptyLogs(t *testing.T) {
 		).
 		Times(1)
 
+	testReplicaInit := NewMockinitReplica(cntrl)
+	testReplicaInit.
+		EXPECT().
+		InitMasterReplica(gomock.Any()).
+		Return(nil).
+		Times(1)
+
+	testAppLogger := NewMockappLogger(cntrl)
+
 	initStorage, err := NewStorageWithRecover(
 		context.Background(),
 		engine.NewInMemoryEngine(),
@@ -131,9 +153,36 @@ func TestInitWithEmptyLogs(t *testing.T) {
 			MaxSegmentSize:    "30kb",
 		},
 		testDirFs,
+		testReplicaInit,
+		replication.ReplicaTypeMaster,
+		testAppLogger,
 	)
 	assert.NoError(t, err)
 	res, err := initStorage.Get(context.Background(), "key")
 	assert.ErrorIs(t, err, engine.NotFoundKey)
 	assert.Empty(t, res)
+}
+
+func TestInitUnknownReplicaType(t *testing.T) {
+	cntrl := gomock.NewController(t)
+	defer cntrl.Finish()
+
+	testDirFs := NewMockfsDir(cntrl)
+	testReplicaInit := NewMockinitReplica(cntrl)
+	testAppLogger := NewMockappLogger(cntrl)
+	initStorage, err := NewStorageWithRecover(
+		context.Background(),
+		engine.NewInMemoryEngine(),
+		config.AppConfigWal{
+			FlushBatchSize:    100,
+			FlushBatchTimeout: 10 * time.Millisecond,
+			MaxSegmentSize:    "30kb",
+		},
+		testDirFs,
+		testReplicaInit,
+		"unknown",
+		testAppLogger,
+	)
+	assert.Error(t, err)
+	assert.Nil(t, initStorage)
 }

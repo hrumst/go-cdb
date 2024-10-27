@@ -2,17 +2,22 @@ package storage
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hrumst/go-cdb/internal/database/compute"
 	wal2 "github.com/hrumst/go-cdb/internal/database/storage/wal"
 )
 
 type storage struct {
-	engine storageEngine
-	wal    wal
+	engine   storageEngine
+	wal      wal
+	isMaster bool
 }
 
 func (s storage) Set(ctx context.Context, key string, val string) error {
+	if !s.isMaster {
+		return fmt.Errorf("'set' operation is not allowable on slave replica")
+	}
 	if err := s.wal.AddLogRecord(ctx, compute.CommandTypeSet, []string{key, val}); err != nil {
 		return err
 	}
@@ -20,6 +25,9 @@ func (s storage) Set(ctx context.Context, key string, val string) error {
 }
 
 func (s storage) Del(ctx context.Context, key string) error {
+	if !s.isMaster {
+		return fmt.Errorf("'del' operation is not allowable on slave replica")
+	}
 	if err := s.wal.AddLogRecord(ctx, compute.CommandTypeDel, []string{key}); err != nil {
 		return err
 	}

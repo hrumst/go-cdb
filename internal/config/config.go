@@ -3,10 +3,11 @@ package config
 import "time"
 
 type AppConfig struct {
-	Engine  AppConfigEngine  `yaml:"engine"`
-	Network AppConfigNetwork `yaml:"network"`
-	Logging AppConfigLogging `yaml:"logging"`
-	Wal     AppConfigWal     `yaml:"wal"`
+	Engine      AppConfigEngine  `yaml:"engine"`
+	Network     AppConfigNetwork `yaml:"network"`
+	Logging     AppConfigLogging `yaml:"logging"`
+	Wal         AppConfigWal     `yaml:"wal"`
+	Replication AppConfigReplica `yaml:"replication"`
 }
 
 type AppConfigEngine struct {
@@ -31,4 +32,10 @@ type AppConfigWal struct {
 	FlushBatchTimeout time.Duration `yaml:"flushing_batch_timeout"`
 	MaxSegmentSize    string        `yaml:"max_segment_size"`
 	DataDirectoryPath string        `yaml:"data_directory"`
+}
+
+type AppConfigReplica struct {
+	ReplicaType   string        `yaml:"replica_type"`
+	MasterAddress string        `yaml:"master_address"`
+	SyncInterval  time.Duration `yaml:"sync_interval"`
 }

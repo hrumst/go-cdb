@@ -3,8 +3,6 @@ package engine
 import (
 	"context"
 	"errors"
-	"fmt"
-	"sync"
 )
 
 var (
@@ -12,45 +10,44 @@ var (
 	NotFoundKey = errors.New("not found key")
 )
 
+const defaultSectionsNumber = 1 << 5
+
 type inMemoryEngine struct {
-	mu   sync.RWMutex
-	data map[string]string
+	dataStore []*inMemoryEngineSection
 }
 
 func NewInMemoryEngine() *inMemoryEngine {
-	return &inMemoryEngine{
-		data: make(map[string]string),
+	newEngine := inMemoryEngine{
+		dataStore: make([]*inMemoryEngineSection, defaultSectionsNumber),
 	}
+	for i := 0; i < defaultSectionsNumber; i += 1 {
+		newEngine.dataStore[i] = &inMemoryEngineSection{
+			data: make(map[string]string),
+		}
+	}
+	return &newEngine
 }
 
-func (ime *inMemoryEngine) Set(_ context.Context, key string, val string) error {
-	ime.mu.Lock()
-	defer ime.mu.Unlock()
-
-	ime.data[key] = val
-	return nil
+func (ie *inMemoryEngine) sectionNum(key string) int {
+	var sectionNum int
+	for i := 0; i < len(key); i += 1 {
+		sectionNum += int(key[i])
+	}
+	return sectionNum % len(ie.dataStore)
 }
 
-func (ime *inMemoryEngine) Del(_ context.Context, key string) error {
-	ime.mu.Lock()
-	defer ime.mu.Unlock()
-
-	_, exists := ime.data[key]
-	if !exists {
-		return nil
-	}
-
-	delete(ime.data, key)
-	return nil
+func (ie *inMemoryEngine) sectionByKey(key string) *inMemoryEngineSection {
+	return ie.dataStore[ie.sectionNum(key)]
 }
 
-func (ime *inMemoryEngine) Get(_ context.Context, key string) (string, error) {
-	ime.mu.RLock()
-	defer ime.mu.RUnlock()
+func (ie *inMemoryEngine) Set(ctx context.Context, key string, val string) error {
+	return ie.sectionByKey(key).Set(ctx, key, val)
+}
 
-	val, exists := ime.data[key]
-	if !exists {
-		return "", fmt.Errorf("%w: inMemoryEngine.Get error: %w: %s", ExecError, NotFoundKey, key)
-	}
-	return val, nil
+func (ie *inMemoryEngine) Del(ctx context.Context, key string) error {
+	return ie.sectionByKey(key).Del(ctx, key)
+}
+
+func (ie *inMemoryEngine) Get(ctx context.Context, key string) (string, error) {
+	return ie.sectionByKey(key).Get(ctx, key)
 }
