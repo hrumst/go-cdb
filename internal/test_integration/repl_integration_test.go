@@ -46,7 +46,7 @@ func TestIntegrationREPL(t *testing.T) {
 		input,
 		output,
 		func(input string) (string, error) {
-			return testDb.Execute(context.Background(), input), nil
+			return string(testDb.Execute(context.Background(), []byte(input))), nil
 		},
 	)
 	go func() {
@@ -105,7 +105,7 @@ func TestIntegrationREPLWithExit(t *testing.T) {
 		input,
 		output,
 		func(input string) (string, error) {
-			return testDb.Execute(context.Background(), input), nil
+			return string(testDb.Execute(context.Background(), []byte(input))), nil
 		},
 	)
 	go func() {

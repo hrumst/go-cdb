@@ -11,6 +11,8 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	compute "github.com/hrumst/go-cdb/internal/database/compute"
+	walLog "github.com/hrumst/go-cdb/internal/database/storage/wal"
+	zapcore "go.uber.org/zap/zapcore"
 )
 
 // MockstorageEngine is a mock of storageEngine interface.
@@ -182,4 +184,129 @@ func (m *MockfsDir) WriteSync(filename string, data []byte) (os.FileInfo, error)
 func (mr *MockfsDirMockRecorder) WriteSync(filename, data interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WriteSync", reflect.TypeOf((*MockfsDir)(nil).WriteSync), filename, data)
+}
+
+// MockappLogger is a mock of appLogger interface.
+type MockappLogger struct {
+	ctrl     *gomock.Controller
+	recorder *MockappLoggerMockRecorder
+}
+
+// MockappLoggerMockRecorder is the mock recorder for MockappLogger.
+type MockappLoggerMockRecorder struct {
+	mock *MockappLogger
+}
+
+// NewMockappLogger creates a new mock instance.
+func NewMockappLogger(ctrl *gomock.Controller) *MockappLogger {
+	mock := &MockappLogger{ctrl: ctrl}
+	mock.recorder = &MockappLoggerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockappLogger) EXPECT() *MockappLoggerMockRecorder {
+	return m.recorder
+}
+
+// Debug mocks base method.
+func (m *MockappLogger) Debug(ctx context.Context, msg string, fields ...zapcore.Field) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, msg}
+	for _, a := range fields {
+		varargs = append(varargs, a)
+	}
+	m.ctrl.Call(m, "Debug", varargs...)
+}
+
+// Debug indicates an expected call of Debug.
+func (mr *MockappLoggerMockRecorder) Debug(ctx, msg interface{}, fields ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, msg}, fields...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Debug", reflect.TypeOf((*MockappLogger)(nil).Debug), varargs...)
+}
+
+// Error mocks base method.
+func (m *MockappLogger) Error(ctx context.Context, msg string, fields ...zapcore.Field) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, msg}
+	for _, a := range fields {
+		varargs = append(varargs, a)
+	}
+	m.ctrl.Call(m, "Error", varargs...)
+}
+
+// Error indicates an expected call of Error.
+func (mr *MockappLoggerMockRecorder) Error(ctx, msg interface{}, fields ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, msg}, fields...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Error", reflect.TypeOf((*MockappLogger)(nil).Error), varargs...)
+}
+
+// Info mocks base method.
+func (m *MockappLogger) Info(ctx context.Context, msg string, fields ...zapcore.Field) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, msg}
+	for _, a := range fields {
+		varargs = append(varargs, a)
+	}
+	m.ctrl.Call(m, "Info", varargs...)
+}
+
+// Info indicates an expected call of Info.
+func (mr *MockappLoggerMockRecorder) Info(ctx, msg interface{}, fields ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, msg}, fields...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Info", reflect.TypeOf((*MockappLogger)(nil).Info), varargs...)
+}
+
+// MockinitReplica is a mock of initReplica interface.
+type MockinitReplica struct {
+	ctrl     *gomock.Controller
+	recorder *MockinitReplicaMockRecorder
+}
+
+// MockinitReplicaMockRecorder is the mock recorder for MockinitReplica.
+type MockinitReplicaMockRecorder struct {
+	mock *MockinitReplica
+}
+
+// NewMockinitReplica creates a new mock instance.
+func NewMockinitReplica(ctrl *gomock.Controller) *MockinitReplica {
+	mock := &MockinitReplica{ctrl: ctrl}
+	mock.recorder = &MockinitReplicaMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockinitReplica) EXPECT() *MockinitReplicaMockRecorder {
+	return m.recorder
+}
+
+// InitMasterReplica mocks base method.
+func (m *MockinitReplica) InitMasterReplica(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InitMasterReplica", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InitMasterReplica indicates an expected call of InitMasterReplica.
+func (mr *MockinitReplicaMockRecorder) InitMasterReplica(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitMasterReplica", reflect.TypeOf((*MockinitReplica)(nil).InitMasterReplica), ctx)
+}
+
+// InitSlaveReplica mocks base method.
+func (m *MockinitReplica) InitSlaveReplica(ctx context.Context, stream chan []walLog.Log) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InitSlaveReplica", ctx, stream)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InitSlaveReplica indicates an expected call of InitSlaveReplica.
+func (mr *MockinitReplicaMockRecorder) InitSlaveReplica(ctx, stream interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitSlaveReplica", reflect.TypeOf((*MockinitReplica)(nil).InitSlaveReplica), ctx, stream)
 }

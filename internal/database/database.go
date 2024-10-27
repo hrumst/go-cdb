@@ -60,14 +60,14 @@ func formatOkResult(res string) string {
 	return "Ok: " + res
 }
 
-func (d *database) Execute(ctx context.Context, input string) string {
+func (d *database) Execute(ctx context.Context, input []byte) []byte {
 	d.logger.Debug(
 		ctx,
 		"incoming db query",
-		zap.String("input", input),
+		zap.String("input", string(input)),
 	)
 
-	cmdExec, err := d.cep.Parse(input)
+	cmdExec, err := d.cep.Parse(string(input))
 	if err != nil {
 		d.logger.Debug(
 			ctx,
@@ -75,7 +75,7 @@ func (d *database) Execute(ctx context.Context, input string) string {
 			zap.Any("error", err),
 		)
 
-		return formatErrorResult(err)
+		return []byte(formatErrorResult(err))
 	}
 
 	d.logger.Debug(
@@ -105,12 +105,12 @@ func (d *database) Execute(ctx context.Context, input string) string {
 			"db query error",
 			zap.Any("error", execErr),
 		)
-		return formatErrorResult(execErr)
+		return []byte(formatErrorResult(execErr))
 	}
 	d.logger.Debug(
 		ctx,
 		"db query result",
 		zap.Any("result", resultVal),
 	)
-	return formatOkResult(resultVal)
+	return []byte(formatOkResult(resultVal))
 }

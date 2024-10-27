@@ -66,6 +66,10 @@ func (d *dir) FilesStats() ([]os.FileInfo, error) {
 
 	result := make([]os.FileInfo, 0, len(files))
 	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+
 		fileInfo, err := file.Info()
 		if err != nil {
 			continue

@@ -41,8 +41,9 @@ func TestStorage_InMemoryEngine(t *testing.T) {
 		Times(2)
 
 	testStorage := storage{
-		engine: engine.NewInMemoryEngine(),
-		wal:    testWal,
+		engine:   engine.NewInMemoryEngine(),
+		wal:      testWal,
+		isMaster: true,
 	}
 	result, err := testStorage.Get(context.Background(), testKey)
 	assert.Equal(t, "", result)
@@ -86,8 +87,9 @@ func TestStorage_WalError(t *testing.T) {
 		Times(1)
 
 	testStorage := storage{
-		engine: engine.NewInMemoryEngine(),
-		wal:    testWal,
+		engine:   engine.NewInMemoryEngine(),
+		wal:      testWal,
+		isMaster: true,
 	}
 	err := testStorage.Set(context.Background(), testKey, testVal)
 	assert.Error(t, err)

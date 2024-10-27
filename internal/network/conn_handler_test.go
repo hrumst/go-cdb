@@ -2,7 +2,6 @@ package network
 
 import (
 	"context"
-	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 	"io"
 	"net"
@@ -10,6 +9,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/hrumst/go-cdb/internal/tools"
 )
@@ -84,9 +85,9 @@ func TestConnHandlerQueryHandler(t *testing.T) {
 	testLogger := tools.NewAppLogger(zap.NewNop())
 
 	var handlerCallCount int64
-	testHandler := func(ctx context.Context, input string) string {
+	testHandler := func(ctx context.Context, input []byte) []byte {
 		atomic.AddInt64(&handlerCallCount, 1)
-		return "response: " + input
+		return []byte("response: " + string(input))
 	}
 
 	chq := NewConnHandlerQuery(testHandler, 10, 100*time.Millisecond, testLogger)

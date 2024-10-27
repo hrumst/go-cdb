@@ -138,9 +138,9 @@ func TestDatabase(t *testing.T) {
 				db := NewDatabase(ms, mcep, tools.NewAppLogger(zap.NewNop()))
 				result := db.Execute(
 					context.Background(),
-					tc.input,
+					[]byte(tc.input),
 				)
-				assert.Equal(t, tc.expectResult, result)
+				assert.Equal(t, tc.expectResult, string(result))
 			},
 		)
 	}
